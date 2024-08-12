@@ -1,0 +1,66 @@
+[tool.poetry]
+name = "ag-bot"
+version = "0.1.0"
+description = "AG bot"
+authors = ["Dmitry Vasiliev <contact.vasiliev.dmitry@gmail.com>"]
+
+[tool.poetry.dependencies]
+python = "^3.11"
+requests = "^2.32.3"
+httpx = "^0.24.1"
+playwright = "^1.43.0"
+pydantic = "^2.7.4"
+playwright-stealth = "^1.0.6"
+celery = "5.4.0"
+dependency-injector = {extras = ["pydantic"], version = "^4.41.0"}
+python-telegram-bot = "^20.5"
+emoji = "^2.12.1"
+redis = "^5.0.6"
+sqlalchemy = "^2.0.28"
+alembic = "^1.13.1"
+psycopg = "^3.1.19"
+pytelegrambotapi = "^4.20.0"
+psycopg-binary = "^3.1.19"
+jinja2 = "^3.1.4"
+sqlalchemy-utils = "^0.41.2"
+pydantic-settings = "^2.3.3"
+lorem-text = "^2.1"
+structlog = "^24.2.0"
+python-logging-loki = "^0.3.1"
+minio = "^7.2.7"
+babel = "^2.15.0"
+pytz = "^2024.1"
+
+[tool.poetry.group.dev.dependencies]
+pytest = "^8.2.2"
+mypy = "^1.10"
+flake8 = "^7.0.0"
+jupyter = "^1.0.0"
+black = "^24.4.2"
+pytest-alembic = "^0.11.0"
+pytest-mock = "^3.14.0"
+isort = "^5.13.2"
+flake8-quotes = "^3.4.0"
+flake8-isort = "^6.1.1"
+setuptools = "^70.2.0"
+flake8-pytest-style = "^1.7.2"
+flake8-bandit = "^4.1.1"
+pep8-naming = "^0.14.1"
+flake8-string-format = "^0.3.0"
+flake8-rst-docstrings = "^0.3.0"
+flake8-bugbear = "^24.4.26"
+bump-pydantic = "^0.8.0"
+pytest-playwright = "^0.5.0"
+pytest-xdist = "^3.6.1"
+pytest-rerunfailures = "^14.0"
+flake8-pyproject = "^1.2.3"
+sqlalchemy = {extras = ["mypy"], version = "^2.0.30"}
+types-pytz = "^2024.1.0.20240417"
+
+[build-system]
+requires = ["poetry-core>=1.0.0"]
+build-backend = "poetry.core.masonry.api"
+
+[tool.isort]
+profile = "black"
+force_single_line = true

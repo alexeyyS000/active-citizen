@@ -1,1 +1,1 @@
-# active-citizen
+service for automatic completion of activities and surveys on the site https://ag.mos.ru

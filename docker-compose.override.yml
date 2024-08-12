@@ -1,0 +1,15 @@
+version: "3"
+
+services:
+  redis:
+    ports:
+      - "6379:6379"
+
+  db:
+    ports:
+      - "5555:5432"
+
+  minio:
+    ports:
+      - "9000:9000"
+      - "9090:9090"

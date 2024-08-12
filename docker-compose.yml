@@ -1,0 +1,118 @@
+version: "3"
+
+services:
+  db:
+    image: postgres:15-alpine
+    restart: unless-stopped
+    healthcheck:
+      test: [ "CMD-SHELL", "sh -c 'pg_isready -U ${POSTGRES_USER} -d ${POSTGRES_DB}'" ]
+      interval: 10s
+      timeout: 3s
+      retries: 3
+    volumes:
+      - db:/var/lib/postgresql/data
+    env_file:
+      - .env
+
+  redis:
+    image: redis:7.0.8-alpine
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 30s
+      retries: 50
+      start_period: 30s
+    volumes:
+      - redis_data:/data
+
+  bot:
+    image: ghcr.io/swimmwatch/ag-bot/bot
+    build:
+      context: .
+      args:
+        PYTHON_VERSION: $PYTHON_VERSION
+        POETRY_VERSION: $POETRY_VERSION
+    restart: unless-stopped
+    env_file:
+      - ".env"
+    depends_on:
+      redis:
+        condition: service_healthy
+      db:
+        condition: service_healthy
+      worker:
+        condition: service_healthy
+    command: python -m apps.bot
+
+  worker:
+    image: ghcr.io/swimmwatch/ag-bot/worker
+    build:
+      context: .
+      dockerfile: Dockerfile.worker
+      args:
+        PYTHON_VERSION: $PYTHON_VERSION
+        POETRY_VERSION: $POETRY_VERSION
+    restart: unless-stopped
+    command: sh -c "alembic upgrade head && celery --app apps.worker.app worker --loglevel INFO --concurrency=1"
+    healthcheck:
+      test: celery --app apps.worker.app status
+      interval: 10s
+      timeout: 10s
+      retries: 10
+    depends_on:
+      minio:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+      db:
+        condition: service_healthy
+    env_file:
+      - .env
+
+  worker-beat:
+    image: ghcr.io/swimmwatch/ag-bot/worker-beat
+    restart: unless-stopped
+    build:
+      context: .
+      args:
+        PYTHON_VERSION: $PYTHON_VERSION
+        POETRY_VERSION: $POETRY_VERSION
+    command: celery --app apps.worker.app beat --loglevel INFO --schedule /tmp/celerybeat-schedule
+    depends_on:
+      worker:
+        condition: service_healthy
+    env_file:
+      - .env
+
+  minio:
+    image: minio/minio:RELEASE.2024-04-06T05-26-02Z
+    hostname: minio
+    restart: always
+    command: minio server --console-address ":9090" /data
+    env_file:
+      - .env
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:9090/minio/health/live"]
+      interval: 30s
+      timeout: 20s
+      retries: 3
+    ports:
+      - "9090:9090"
+    volumes:
+      - minio_data:/data
+
+  flower:
+    image: mher/flower:0.9.7
+    command: ['flower', '--broker=redis://redis:6379', '--port=5557']
+    ports:
+      - 5557:5557
+    depends_on:
+      - redis
+
+
+volumes:
+  db:
+    driver: local
+  minio_data:
+  redis_data:

@@ -1,0 +1,53 @@
+ARG PYTHON_VERSION
+
+FROM python:${PYTHON_VERSION:-3.10}-slim-buster as build
+
+ARG POETRY_VERSION
+
+ENV PIP_DISABLE_PIP_VERSION_CHECK=on
+ENV PIP_NO_CACHE_DIR=off
+ENV PYTHONDONTWRITEBYTECODE=on
+ENV PYTHONFAULTHANDLER=on
+ENV PYTHONUNBUFFERED=on
+ENV PIP_DEFAULT_TIMEOUT=100
+ENV POETRY_VERSION=${POETRY_VERSION}
+
+RUN apt-get update
+RUN apt-get install -y --no-install-recommends build-essential gcc curl
+
+WORKDIR /app
+
+RUN pip install poetry==${POETRY_VERSION}
+
+RUN python -m venv .venv
+
+COPY pyproject.toml .
+COPY poetry.lock .
+
+RUN poetry export --format=requirements.txt --without=dev > requirements.txt
+RUN .venv/bin/pip install -r requirements.txt
+
+# Compile locales for email domain
+COPY src/locale locale
+RUN .venv/bin/pybabel compile --domain=messages --use-fuzzy --directory=locale
+
+
+FROM python:${PYTHON_VERSION:-3.10}-bookworm
+
+WORKDIR /app
+
+# Install curl for healthchecking
+RUN apt-get -y update && apt-get install -y --no-install-recommends curl jq
+
+# Copy installed packages
+COPY --from=build /app/requirements.txt .
+
+RUN pip install -r requirements.txt
+
+RUN playwright install --with-deps
+
+# Copy compiled locales
+COPY --from=build /app/locale locale
+
+# Copy application
+COPY src .
